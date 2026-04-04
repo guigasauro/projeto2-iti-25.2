@@ -2,9 +2,13 @@ import os
 import json
 import subprocess
 import sys
+import tempfile
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+KNN_MODEL_DIR = os.path.join(BASE_DIR, "modelos_knn")
 
 # Caminho para o seu executável PPM (ajustado considerando que o script roda na pasta classificador/)
-PPM_CMD = "../ppm" 
+PPM_CMD = os.path.abspath(os.path.join(BASE_DIR, "..", "ppm"))
 
 def treinar_modelo(pasta_dataset, arquivo_saida_json):
     """
@@ -41,7 +45,8 @@ def treinar_modelo(pasta_dataset, arquivo_saida_json):
 
         for arquivo_txt in arquivos_txt:
             caminho_completo = os.path.join(caminho_classe, arquivo_txt)
-            arquivo_temporario_ppm = caminho_completo + ".ppm"
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".ppm") as temp_saida:
+                arquivo_temporario_ppm = temp_saida.name
 
             # Invocando o programa C++ (usaremos a configuração NCD boa: Reset Desativado = 0)
             # cmd: ../ppm encode <entrada> <saida.ppm> 5 1000 10 0
@@ -61,10 +66,18 @@ def treinar_modelo(pasta_dataset, arquivo_saida_json):
                 print(f"   [!] Falha grave ao tentar comprimir: {arquivo_txt}")
             finally:
                 # Segurança: Garante que o PPM gerado será apagado do disco mesmo se der tela azul!
-                if os.path.exists(arquivo_temporario_ppm):
-                    os.remove(arquivo_temporario_ppm)
+                for artefato in (
+                    arquivo_temporario_ppm,
+                    arquivo_temporario_ppm + ".rate.csv",
+                    arquivo_temporario_ppm + ".reset.csv",
+                ):
+                    if os.path.exists(artefato):
+                        os.remove(artefato)
 
     # Escreve (salva) o Dicionário em Disco no formato JSON
+    output_dir = os.path.dirname(arquivo_saida_json)
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
     with open(arquivo_saida_json, 'w', encoding='utf-8') as f:
         json.dump(cache_treinamento, f, indent=4)
 
@@ -77,10 +90,18 @@ def treinar_modelo(pasta_dataset, arquivo_saida_json):
 if __name__ == "__main__":
     
     # O Python chamará por ex: python treinar.py ../dataset/
-    pasta_do_dataset = sys.argv[1] if len(sys.argv) > 1 else "../dataset"
+    pasta_do_dataset = (
+        sys.argv[1]
+        if len(sys.argv) > 1
+        else os.path.abspath(os.path.join(BASE_DIR, "..", "dataset"))
+    )
     
     # Nome do Arquivo Modelo de destino
-    modelo_json = "modelo_treinado.json"
+    modelo_json = (
+        sys.argv[2]
+        if len(sys.argv) > 2
+        else os.path.join(KNN_MODEL_DIR, "modelo_treinado.json")
+    )
     
     # Inicia o treino
     treinar_modelo(pasta_do_dataset, modelo_json)

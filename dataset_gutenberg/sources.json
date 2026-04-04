@@ -1,0 +1,98 @@
+[
+  {
+    "class": "romantismo",
+    "title": "Iracema",
+    "author": "José Martiniano de Alencar",
+    "ebook_id": 67740,
+    "url": "https://www.gutenberg.org/ebooks/67740.txt.utf-8",
+    "output_file": "romantismo/completos/iracema.txt"
+  },
+  {
+    "class": "romantismo",
+    "title": "O Guarany Vol. 1",
+    "author": "José Martiniano de Alencar",
+    "ebook_id": 67724,
+    "url": "https://www.gutenberg.org/ebooks/67724.txt.utf-8",
+    "output_file": "romantismo/completos/o_guarany_vol_1.txt"
+  },
+  {
+    "class": "romantismo",
+    "title": "O Guarany Vol. 2",
+    "author": "José Martiniano de Alencar",
+    "ebook_id": 67725,
+    "url": "https://www.gutenberg.org/ebooks/67725.txt.utf-8",
+    "output_file": "romantismo/completos/o_guarany_vol_2.txt"
+  },
+  {
+    "class": "romantismo",
+    "title": "Ubirajara",
+    "author": "José Martiniano de Alencar",
+    "ebook_id": 38496,
+    "url": "https://www.gutenberg.org/ebooks/38496.txt.utf-8",
+    "output_file": "romantismo/completos/ubirajara.txt"
+  },
+  {
+    "class": "romantismo",
+    "title": "Cinco Minutos",
+    "author": "José Martiniano de Alencar",
+    "ebook_id": 44540,
+    "url": "https://www.gutenberg.org/ebooks/44540.txt.utf-8",
+    "output_file": "romantismo/completos/cinco_minutos.txt"
+  },
+  {
+    "class": "romantismo",
+    "title": "A Pata da Gazella",
+    "author": "José Martiniano de Alencar",
+    "ebook_id": 67831,
+    "url": "https://www.gutenberg.org/ebooks/67831.txt.utf-8",
+    "output_file": "romantismo/completos/a_pata_da_gazella.txt"
+  },
+  {
+    "class": "realismo",
+    "title": "Memorias Posthumas de Braz Cubas",
+    "author": "Machado de Assis",
+    "ebook_id": 54829,
+    "url": "https://www.gutenberg.org/ebooks/54829.txt.utf-8",
+    "output_file": "realismo/completos/memorias_posthumas_de_braz_cubas.txt"
+  },
+  {
+    "class": "realismo",
+    "title": "Quincas Borba",
+    "author": "Machado de Assis",
+    "ebook_id": 55682,
+    "url": "https://www.gutenberg.org/ebooks/55682.txt.utf-8",
+    "output_file": "realismo/completos/quincas_borba.txt"
+  },
+  {
+    "class": "realismo",
+    "title": "Dom Casmurro",
+    "author": "Machado de Assis",
+    "ebook_id": 55752,
+    "url": "https://www.gutenberg.org/ebooks/55752.txt.utf-8",
+    "output_file": "realismo/completos/dom_casmurro.txt"
+  },
+  {
+    "class": "realismo",
+    "title": "Esau e Jacob",
+    "author": "Machado de Assis",
+    "ebook_id": 56737,
+    "url": "https://www.gutenberg.org/ebooks/56737.txt.utf-8",
+    "output_file": "realismo/completos/esau_e_jacob.txt"
+  },
+  {
+    "class": "realismo",
+    "title": "Memorial de Ayres",
+    "author": "Machado de Assis",
+    "ebook_id": 55797,
+    "url": "https://www.gutenberg.org/ebooks/55797.txt.utf-8",
+    "output_file": "realismo/completos/memorial_de_ayres.txt"
+  },
+  {
+    "class": "realismo",
+    "title": "O Cortico",
+    "author": "Aluisio Azevedo",
+    "ebook_id": 69187,
+    "url": "https://www.gutenberg.org/ebooks/69187.txt.utf-8",
+    "output_file": "realismo/completos/o_cortico.txt"
+  }
+]

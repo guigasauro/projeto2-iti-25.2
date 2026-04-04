@@ -3,28 +3,40 @@ import subprocess
 import tempfile
 from collections import Counter
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 # Caminho para o seu executável PPM compilado
-PPM_CMD = "../ppm"
+PPM_CMD = os.path.abspath(os.path.join(BASE_DIR, "..", "ppm"))
 
 def tamanho_comprimido(caminho_arquivo):
     """
     Usa o compressor C++ como caixa preta, comprime e
     retorna o tamanho (em bytes) do arquivo de saída gerado.
     """
-    arquivo_saida = caminho_arquivo + ".ppm"
-    
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".ppm") as temp_saida:
+        arquivo_saida = temp_saida.name
+
     # Executa o seu compressor (exemplo configurando para kmax=5)
-    # A flag reset=0 é boa para NCD se você quiser manter a memória
+    # A flag reset=0 é boa para NCD se voce quiser manter a memoria
     cmd = [PPM_CMD, "encode", caminho_arquivo, arquivo_saida, "5", "1000", "10", "0"]
-    
-    # Chama o programa silenciando a saída do stdout
-    subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    
-    tamanho = os.path.getsize(arquivo_saida)
-    
-    # Limpa a lixeira gerada pelo compressor
-    os.remove(arquivo_saida)
-    return tamanho
+
+    try:
+        # Chama o programa silenciando a saida do stdout
+        subprocess.run(
+            cmd,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=True,
+        )
+        return os.path.getsize(arquivo_saida)
+    finally:
+        for artefato in (
+            arquivo_saida,
+            arquivo_saida + ".rate.csv",
+            arquivo_saida + ".reset.csv",
+        ):
+            if os.path.exists(artefato):
+                os.remove(artefato)
 
 def calcular_ncd(caminho_x, caminho_y):
     """
@@ -64,8 +76,15 @@ def classificar_knn(caminho_desconhecido, pasta_dataset, k_vizinhos=5):
         caminho_classe = os.path.join(pasta_dataset, classe)
         if not os.path.isdir(caminho_classe): continue
             
-        # Mede a distância para todos os arquivos daquela classe
-        for arquivo_treino in os.listdir(caminho_classe):
+        arquivos_treino = [
+            arquivo
+            for arquivo in sorted(os.listdir(caminho_classe))
+            if arquivo.lower().endswith(".txt")
+            and os.path.isfile(os.path.join(caminho_classe, arquivo))
+        ]
+
+        # Mede a distancia para todos os arquivos daquela classe
+        for arquivo_treino in arquivos_treino:
             caminho_treino = os.path.join(caminho_classe, arquivo_treino)
             
             # O processamento "pesado" ocorre aqui
@@ -77,7 +96,13 @@ def classificar_knn(caminho_desconhecido, pasta_dataset, k_vizinhos=5):
                 "ncd": distancia_ncd
             })
             
-    # Ordena as distâncias da menor (mais parecida) para a maior (mais diferente)
+    if not distancias:
+        raise RuntimeError(
+            "Nenhuma amostra .txt foi encontrada no dataset. "
+            "Prepare os trechos antes de classificar."
+        )
+
+    # Ordena as distancias da menor (mais parecida) para a maior (mais diferente)
     distancias.sort(key=lambda x: x["ncd"])
     
     # Pega apenas os "K" primeiros do topo
@@ -93,7 +118,8 @@ def classificar_knn(caminho_desconhecido, pasta_dataset, k_vizinhos=5):
     return classe_vencedora
 
 if __name__ == "__main__":
-    desconhecido = "desconhecidos/poema_misterioso.txt"
+    desconhecido = os.path.join(BASE_DIR, "desconhecidos", "poema_misterioso.txt")
     if os.path.exists(desconhecido):
-        resultado = classificar_knn(desconhecido, "dataset", k_vizinhos=3)
+        pasta_dataset = os.path.abspath(os.path.join(BASE_DIR, "..", "dataset"))
+        resultado = classificar_knn(desconhecido, pasta_dataset, k_vizinhos=3)
         print(f"\n=> Veredito Final: O texto pertence ao {resultado.upper()}!")
