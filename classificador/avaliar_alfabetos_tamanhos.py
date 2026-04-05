@@ -58,22 +58,45 @@ def avaliar_cenario_acuracia(pasta_dataset_preparado, num_amostras_treino, num_a
     acertos = 0
     total = len(testes_a_fazer)
     
-    print(f"\nRealizando inferência de {total} amostras...")
-    # Desativa print padrão
+    print(f"\nRealizando inferência de {total} amostras simultaneamente...")
+    # Desativa print padrão para não sujar o log com saídas internas
     sys.stdout = open(os.devnull, 'w')
     
+    import concurrent.futures
+    
     try:
-        for arquivo, classe_real in testes_a_fazer:
-            predicao = classificar_ppm_direto(arquivo, pasta_modelos_temp, kmax=kmax)
-            if predicao and predicao.lower() == classe_real.lower():
-                acertos += 1
+        processados = 0
+        def processar_item(item):
+            arquivo_alvo, classe_real_alvo = item
+            pred_alvo = classificar_ppm_direto(arquivo_alvo, pasta_modelos_temp, kmax=kmax)
+            return pred_alvo and pred_alvo.lower() == classe_real_alvo.lower()
+
+        workers = (os.cpu_count() or 1) * 2
+        with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
+            futuros = [executor.submit(processar_item, t) for t in testes_a_fazer]
+            
+            for futuro in concurrent.futures.as_completed(futuros):
+                if futuro.result():
+                    acertos += 1
+                processados += 1
+                
+                # Atualiza a barra de progresso em tempo real
+                pct = (acertos / processados) * 100
+                barra_len = 30
+                progresso = int((processados / total) * barra_len)
+                barra = "█" * progresso + "-" * (barra_len - progresso)
+                
+                sys_stdout.write(f"\r[{barra}] {processados}/{total} | Acertos: {acertos}/{processados} ({pct:.1f}%)")
+                sys_stdout.flush()
+            
     finally:
         # Restaura print
         sys.stdout.close()
         sys.stdout = sys_stdout
 
+    print("\n") # Quebra a linha após o término da barra
     acuracia = (acertos / total) * 100 if total > 0 else 0
-    print(f"Resultado -> Acertos: {acertos}/{total} ({acuracia:.2f}%)")
+    print(f"Resultado do Cenário -> Acertos: {acertos}/{total} ({acuracia:.2f}%)")
     
     # Limpa disco
     shutil.rmtree(temp_dir)

@@ -9,10 +9,11 @@ def main():
     
     # Devido à diferença na quantidade gerada por cada tamanho de chunk (arquivos maiores geram menos partes),
     # definimos um limite seguro de treino e teste para que não falte dados pra teste.
+    # Os limites mínimos de arquivos por classe e chunk são: 3kb: ~478, 6kb: ~241, 9kb: ~161
     tamanhos = {
-        '3kb': {'treino': 40, 'teste': 5},
-        '6kb': {'treino': 20, 'teste': 5},
-        '9kb': {'treino': 10, 'teste': 5}
+        '3kb': {'treino': 380, 'teste': 90},
+        '6kb': {'treino': 190, 'teste': 50},
+        '9kb': {'treino': 125, 'teste': 35}
     }
     
     alfabetos = ['untreated', 'lower', 'no_accents', 'no_punctuation', 'full_treated']
