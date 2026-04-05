@@ -2,6 +2,10 @@ silesia/
 resultados/
 build/
 
+dataset/*/data
+
 *.ppm
 *.csv
 *.o
+*.docx
+*.pyc

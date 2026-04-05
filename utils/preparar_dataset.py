@@ -1,10 +1,13 @@
 import os
 import glob
 import sys
+import argparse
+import unicodedata
+import string
 
-def process_file(input_path, output_dir, chunk_size=3000):
+def process_file(input_path, output_dir, chunk_size=3000, keep_case=False, remove_accents=False, remove_punctuation=False):
     """
-    Lê um arquivo de texto, converte para minúsculas, e divide em 
+    Lê um arquivo de texto, aplica pré-processamentos, e divide em 
     subarquivos contendo um número de bytes aproximado ao `chunk_size`,
     evitando cortar palavras ao meio.
     """
@@ -16,8 +19,18 @@ def process_file(input_path, output_dir, chunk_size=3000):
         print(f"Erro ao ler {input_path}: {e}")
         return
 
-    # 1. Alterar todo o texto para LOWRECASE (minúsculo)
-    text = text.lower()
+    # 1. Transformações de Alfabeto
+    if keep_case:
+        text = text.lower()
+        
+    if remove_accents:
+        # Normaliza retirando os diacríticos
+        text = unicodedata.normalize('NFKD', text).encode('ASCII', 'ignore').decode('utf-8')
+        
+    if remove_punctuation:
+        # Substitui a pontuação por espaços (para não fundir palavras, ex: "fim.O" -> "fim O")
+        trans = str.maketrans(string.punctuation, ' ' * len(string.punctuation))
+        text = text.translate(trans)
     
     # 2. Separar por palavras para garantir que nenhuma palavra será truncada
     words = text.split()
@@ -72,32 +85,49 @@ def process_file(input_path, output_dir, chunk_size=3000):
     print(f"  -> [{base_name}] gerou {count} subarquivos.")
 
 if __name__ == "__main__":
-    # Verifica se os caminhos foram passados no terminal
-    if len(sys.argv) != 3:
-        print("===== UTILITÁRIO DE DATASET =============================================")
-        print("Uso: python preparar_dataset.py <pasta_entrada> <pasta_saida>")
-        print("Exemplo de Uso no seu projeto:")
-        print("     python preparar_dataset.py ../dataset/romantismo/completos ../dataset/romantismo")
-        print("=========================================================================")
-        sys.exit(1)
-        
-    input_dir = sys.argv[1]
-    output_dir = sys.argv[2]
+    BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'dataset'))
+    periodos = ['modernismo', 'realismo', 'romantismo']
     
-    # Verifica se a pasta existe
-    if not os.path.isdir(input_dir):
-        print(f"Erro: A pasta de entrada '{input_dir}' não existe.")
-        sys.exit(1)
-        
-    print(f"Buscando arquivos .txt na pasta '{input_dir}'...")
-    txt_files = glob.glob(os.path.join(input_dir, "*.txt"))
+    tamanhos_chunk = {
+        '3kb': 3000,
+        '6kb': 6000,
+        '9kb': 9000
+    }
     
-    if not txt_files:
-        print("Nenhum arquivo .txt encontrado nesta pasta!")
-        sys.exit(0)
+    tipos_dataset = {
+        'full_treated':   {'keep_case': True,  'remove_accents': True,  'remove_punctuation': True},
+        'lower':          {'keep_case': True,  'remove_accents': False, 'remove_punctuation': False},
+        'no_accents':     {'keep_case': False, 'remove_accents': True,  'remove_punctuation': False},
+        'no_punctuation': {'keep_case': False, 'remove_accents': False, 'remove_punctuation': True},
+        'untreated':      {'keep_case': False, 'remove_accents': False, 'remove_punctuation': False}
+    }
+    
+    for periodo in periodos:
+        input_dir = os.path.join(BASE_DIR, periodo, 'completos')
+        if not os.path.exists(input_dir):
+            print(f"Aviso: Pasta de originais não encontrada: {input_dir}")
+            continue
+            
+        txt_files = glob.glob(os.path.join(input_dir, "*.txt"))
+        if not txt_files:
+            continue
+            
+        print(f"\n=========================================")
+        print(f"[{periodo.upper()}] - Processando {len(txt_files)} arquivos originais...")
         
-    print(f"Processando {len(txt_files)} arquivos. Particionando em ~3KB (lowercase):")
-    for txt in txt_files:
-        process_file(txt, output_dir, chunk_size=3000)
-        
-    print("\nTratamento concluído com sucesso!")
+        for nome_tamanho, bytes_tamanho in tamanhos_chunk.items():
+            for nome_tipo, flags in tipos_dataset.items():
+                output_dir = os.path.join(BASE_DIR, periodo, 'data', nome_tamanho, nome_tipo)
+                
+                print(f" -> Gerando recortes de {nome_tamanho} | Filtro: {nome_tipo}")
+                for txt in txt_files:
+                    process_file(
+                        txt, 
+                        output_dir, 
+                        chunk_size=bytes_tamanho, 
+                        keep_case=flags['keep_case'], 
+                        remove_accents=flags['remove_accents'], 
+                        remove_punctuation=flags['remove_punctuation']
+                    )
+                    
+    print("\nTratamento em lote concluído com sucesso!")
