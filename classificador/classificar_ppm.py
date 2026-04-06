@@ -26,7 +26,7 @@ def tamanho_comprimido(caminho_arquivo, kmax="5"):
                 try: os.remove(artefato)
                 except: pass
 
-def classificar_ppm_direto(caminho_desconhecido, pasta_corpora, kmax="5"):
+def classificar_ppm_direto(caminho_desconhecido, pasta_corpora, kmax="5", metodo="custo", limiar=0.10, retornar_detalhes=False):
     """
     Classificador usando Cross-Entropy / Entropia Condicional PPM.
     Mede quantos bytes o texto desconhecido adiciona a um corpo já consolidado.
@@ -54,6 +54,8 @@ def classificar_ppm_direto(caminho_desconhecido, pasta_corpora, kmax="5"):
         
         # 1. Comprime apenas o Corpus Base (C_Base)
         tamanho_base = tamanho_comprimido(caminho_corpus, kmax)
+        tamanho_base_orig = os.path.getsize(caminho_corpus)
+        taxa_base = (tamanho_base * 8) / tamanho_base_orig if tamanho_base_orig > 0 else 0
         
         # 2. Concatena Corpus + Desconhecido
         with tempfile.NamedTemporaryFile(delete=False) as temp_combo:
@@ -63,26 +65,43 @@ def classificar_ppm_direto(caminho_desconhecido, pasta_corpora, kmax="5"):
             temp_combo.write(bytes_desconhecidos)
             caminho_combo = temp_combo.name
             
+        tamanho_combo_orig = os.path.getsize(caminho_combo)
+            
         # 3. Comprime o Combo (C_Combo)
         tamanho_combo = tamanho_comprimido(caminho_combo, kmax)
         os.remove(caminho_combo)
         
-        # 4. Calcula os bytes necessários apenas para codificar o desconhecido
+        taxa_combo = (tamanho_combo * 8) / tamanho_combo_orig if tamanho_combo_orig > 0 else 0
+        
+        # 4. Calcula os bytes necessários e variação de taxa
         entropia_cruzada_bytes = tamanho_combo - tamanho_base
+        variacao_taxa = taxa_combo - taxa_base
         
         resultados.append({
             "classe": classe,
-            "custo_bytes": entropia_cruzada_bytes
+            "custo_bytes": entropia_cruzada_bytes,
+            "variacao_taxa": variacao_taxa,
+            "taxa_base": taxa_base
         })
-        print(f"[{classe.title():>12}] -> Custou {entropia_cruzada_bytes} bytes adicionais.")
+        print(f"[{classe.title():>12}] -> Custo: {entropia_cruzada_bytes} B | Var Taxa: {variacao_taxa:.4f} b/s")
 
+    vencedor = None
     if not resultados:
-        return None
-
-    # Ordena pelo MENOR custo
-    resultados.sort(key=lambda x: x["custo_bytes"])
-    vencedor = resultados[0]["classe"]
-    
+        pass
+    elif metodo == "taxa":
+        # Metologia Alternativa: taxa bits/simbolo com limiar restrito de melhoria
+        # 1. Se for positiva a variação, já é rejeitada automaticamente (pois é maior que o limiar negativo)
+        # 2. Exige ganho de compressão (valor negativo) igual ou mais forte que o threshold
+        candidatos = [r for r in resultados if r["variacao_taxa"] <= -(r["taxa_base"] * limiar)]
+        if len(candidatos) == 1:
+            vencedor = candidatos[0]["classe"]
+    else:
+        # Metodologia Padrão: Ordena pelo MENOR custo em bytes
+        resultados.sort(key=lambda x: x["custo_bytes"])
+        vencedor = resultados[0]["classe"]
+        
+    if retornar_detalhes:
+        return vencedor, resultados
     return vencedor
 
 if __name__ == "__main__":

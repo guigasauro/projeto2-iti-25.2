@@ -86,7 +86,7 @@ def process_file(input_path, output_dir, chunk_size=3000, keep_case=False, remov
 
 if __name__ == "__main__":
     BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'dataset'))
-    periodos = ['modernismo', 'realismo', 'romantismo']
+    periodos = ['modernismo', 'pré-modernismo', 'realismo', 'romantismo']
     
     tamanhos_chunk = {
         '3kb': 3000,
@@ -118,6 +118,9 @@ if __name__ == "__main__":
         for nome_tamanho, bytes_tamanho in tamanhos_chunk.items():
             for nome_tipo, flags in tipos_dataset.items():
                 output_dir = os.path.join(BASE_DIR, periodo, 'data', nome_tamanho, nome_tipo)
+                
+                if os.path.exists(output_dir) and any(f.endswith('.txt') for f in os.listdir(output_dir)):
+                    continue
                 
                 print(f" -> Gerando recortes de {nome_tamanho} | Filtro: {nome_tipo}")
                 for txt in txt_files:
